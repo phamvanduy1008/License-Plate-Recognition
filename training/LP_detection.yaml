@@ -1,0 +1,7 @@
+train: D:/Python/License-Plate-Recognition/data/lp_detection/images/train/  # train images (relative to 'path')
+val: D:/Python/License-Plate-Recognition/data/lp_detection/images/val/ # val images (relative to 'path')
+
+
+# Classes
+nc:  1 # number of classes
+names: ['license_plate']  # class names

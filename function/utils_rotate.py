@@ -59,4 +59,3 @@ def deskew(src_img, change_cons, center_thres):
         return rotate_image(src_img, compute_skew(changeContrast(src_img), center_thres))
     else:
         return rotate_image(src_img, compute_skew(src_img, center_thres))
-

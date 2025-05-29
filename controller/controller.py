@@ -11,14 +11,14 @@ class LicensePlateController:
         self.model = model
         self.view = view
         
-        # Initialize tracking variables
+        # Khởi tạo các biến theo dõi trạng thái
         self.is_realtime_running = False
         self.realtime_generator = None
         self.is_video_playing = False
         self.video_cap = None
         self.detection_history = []
         
-        # Bind UI events to controller methods
+        # Gắn sự kiện giao diện với các phương thức của controller
         self.view.search_var.trace("w", self.filter_lists)
         self.view.tab_images.configure(command=lambda: self.view.switch_tab("images"))
         self.view.tab_videos.configure(command=lambda: self.view.switch_tab("videos"))
@@ -29,24 +29,24 @@ class LicensePlateController:
         self.view.export_btn.configure(command=self.export_report)
         self.view.update_ip_btn.configure(command=self.update_ip)
         
-        # Bind the delete history handler
+        # Gắn hàm xử lý xóa lịch sử
         self.view.set_delete_handler(self.delete_history)
         
-        # Load initial file lists
+        # Cập nhật danh sách file ban đầu
         self.update_file_lists()
 
     def update_file_lists(self):
-        """Update the file lists in the view"""
+        """Cập nhật danh sách ảnh và video trên giao diện."""
         search_text = self.view.search_var.get().lower()
         image_items, video_items, total_count = self.model.get_file_lists(search_text)
         self.view.update_file_lists(image_items, video_items, total_count)
 
     def filter_lists(self, *args):
-        """Filter the lists based on search input"""
+        """Lọc danh sách dựa trên từ khóa tìm kiếm."""
         self.update_file_lists()
 
     def display_selected_file(self, event):
-        """Display selected image or play selected video on canvas"""
+        """Hiển thị ảnh hoặc phát video được chọn trên canvas."""
         widget = event.widget
         selection = widget.selection()
         if not selection:
@@ -54,14 +54,14 @@ class LicensePlateController:
 
         item_id = selection[0]
         if widget == self.view.image_treeview:
-            # Get the values (filename, plate) from the selected row
+            # Lấy thông tin từ dòng được chọn
             values = widget.item(item_id, "values")
             if not values:
                 return
-            file_name, plate = values  # Extract filename and plate from the row
+            file_name, plate = values
             file_path = self.model.get_image_path(file_name)
             self.display_image(file_path)
-            # Get full plate_with_time from plate_history to extract time
+            # Lấy thời gian từ file lịch sử
             with open("./plate_history.txt", "r", encoding="utf-8") as f:
                 for line in f:
                     if file_name in line:
@@ -80,7 +80,7 @@ class LicensePlateController:
             selected_item = widget.item(item_id, "text")
             file_path = self.model.get_video_path(selected_item)
             self.play_video(file_path)
-            # Look up the plate associated with this video from plate_history.txt
+            # Tìm biển số liên quan đến video
             plate = "Không tìm thấy biển số"
             time_str = "00:00:00 01/01/1970"
             with open("./plate_history.txt", "r", encoding="utf-8") as f:
@@ -97,8 +97,7 @@ class LicensePlateController:
             )
 
     def delete_history(self):
-        """Delete the selected history item from plate_history.txt and remove the file"""
-        # Determine which treeview has the selected item
+        """Xóa mục lịch sử được chọn từ file plate_history.txt và xóa file tương ứng."""
         image_selection = self.view.image_treeview.selection()
         video_selection = self.view.video_treeview.selection()
 
@@ -111,7 +110,6 @@ class LicensePlateController:
 
         if image_selection:
             item_id = image_selection[0]
-            # Get the filename from the selected row
             file_to_delete = self.view.image_treeview.item(item_id, "values")[0]
             is_image = True
         elif video_selection:
@@ -123,7 +121,7 @@ class LicensePlateController:
             messagebox.showerror("Lỗi", "Không tìm thấy tệp tương ứng để xóa!")
             return
 
-        # Xóa dòng trong plate_history.txt
+        # Xóa dòng trong file lịch sử
         try:
             updated_lines = []
             if os.path.exists("./plate_history.txt"):
@@ -135,7 +133,7 @@ class LicensePlateController:
                 with open("./plate_history.txt", "w", encoding="utf-8") as f:
                     f.writelines(updated_lines)
 
-            # Xóa tệp tương ứng
+            # Xóa file tương ứng
             if is_image:
                 file_path = os.path.join(self.model.HISTORY_DIR, file_to_delete)
             else:
@@ -162,7 +160,7 @@ class LicensePlateController:
             self.view.update_status("⬤ Lỗi xóa lịch sử", "#f44336")
 
     def display_image(self, file_path):
-        """Display an image on the canvas"""
+        """Hiển thị ảnh trên canvas."""
         self.stop_video()
         img = cv2.imread(file_path)
         if img is not None:
@@ -172,7 +170,7 @@ class LicensePlateController:
             messagebox.showerror("Lỗi", "Không thể đọc hình ảnh")
 
     def play_video(self, file_path):
-        """Play a video on the canvas"""
+        """Phát video trên canvas."""
         self.stop_video()
         self.video_cap = cv2.VideoCapture(file_path)
         if not self.video_cap.isOpened():
@@ -190,7 +188,7 @@ class LicensePlateController:
             ret, frame = self.video_cap.read()
             if ret:
                 self.view.update_canvas(frame)
-                self.view.root.after(33, update_video)  # ~30 FPS
+                self.view.root.after(33, update_video)  # Cập nhật ~30 FPS
             else:
                 self.stop_video()
                 self.view.update_status("⬤ Kết thúc video", "#757575")
@@ -198,7 +196,7 @@ class LicensePlateController:
         self.view.root.after(0, update_video)
 
     def stop_video(self):
-        """Stop any playing video"""
+        """Dừng phát video."""
         self.is_video_playing = False
         if self.video_cap is not None:
             self.video_cap.release()
@@ -207,18 +205,18 @@ class LicensePlateController:
         self.view.update_status("⬤ Sẵn sàng", self.view.accent_color)
 
     def stop_realtime(self):
-        """Stop real-time detection"""
+        """Dừng chế độ thời gian thực."""
         self.is_realtime_running = False
         if self.realtime_generator is not None:
             try:
-                next(self.realtime_generator)  # Force the generator to stop
+                next(self.realtime_generator)  # Buộc generator dừng lại
             except StopIteration:
                 pass
             self.realtime_generator = None
         self.view.update_status("⬤ Đã dừng real-time", "#757575")
 
     def run_realtime(self):
-        """Run real-time detection"""
+        """Chạy chế độ nhận diện thời gian thực."""
         if self.is_realtime_running:
             return
             
@@ -242,7 +240,7 @@ class LicensePlateController:
         threading.Thread(target=start_realtime_thread).start()
 
     def update_realtime(self):
-        """Update UI with real-time detection results"""
+        """Cập nhật giao diện với kết quả nhận diện thời gian thực."""
         if not self.is_realtime_running:
             self.view.update_status("⬤ Đã dừng real-time", "#757575")
             self.update_file_lists()
@@ -275,7 +273,7 @@ class LicensePlateController:
         self.view.root.after(50, self.update_realtime)
 
     def update_ip(self):
-        """Handle IP address update"""
+        """Cập nhật địa chỉ IP cho camera."""
         new_ip = self.view.ip_entry.get()
         if not new_ip.startswith("http://") or "video" not in new_ip:
             messagebox.showerror("Lỗi", "Địa chỉ IP không hợp lệ. Vui lòng nhập dạng http://<ip>:<port>/video")
@@ -289,7 +287,7 @@ class LicensePlateController:
             messagebox.showinfo("Thông báo", "IP đã được cập nhật. Nhấn 'Chế độ Real-time' để sử dụng IP mới.")
 
     def upload_file(self):
-        """Upload and process image or video file"""
+        """Tải lên và xử lý file ảnh hoặc video."""
         self.stop_video()
         file_path = filedialog.askopenfilename(
             filetypes=[
@@ -311,19 +309,25 @@ class LicensePlateController:
             
             def process_image_thread():
                 try:
+                    # Tạo tên file duy nhất với timestamp
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     original_filename = os.path.basename(file_path)
                     unique_filename = f"image_{timestamp}_{original_filename}"
                     image_dest_path = os.path.join(self.model.HISTORY_DIR, unique_filename)
+                    # Sao chép ảnh vào thư mục lịch sử
                     shutil.copy2(file_path, image_dest_path)
                     
+                    # Xử lý ảnh để nhận diện biển số
                     img, plates, captured_frame = self.model.process_image(image_dest_path)
                     
                     def update_ui():
                         if img is not None:
+                            # Hiển thị ảnh đã xử lý lên canvas
                             self.view.update_canvas(img)
+                            # Lấy biển số đầu tiên nếu có
                             plate = next(iter(plates)) if plates else "Không tìm thấy biển số"
                             current_time = datetime.datetime.now().strftime("%H:%M:%S %d/%m/%Y")
+                            # Cập nhật thông tin biển số lên giao diện
                             self.view.update_plate_info(
                                 plate=plate,
                                 time_str=current_time,
@@ -351,22 +355,27 @@ class LicensePlateController:
             
             def process_video_thread():
                 try:
+                    # Tạo tên file video duy nhất
                     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
                     original_filename = os.path.basename(file_path)
                     unique_filename = f"video_{timestamp}_{original_filename}"
                     video_dest_path = os.path.join(self.model.VIDEO_DIR, unique_filename)
                     
+                    # Xử lý video để nhận diện biển số
                     _, plates, _ = self.model.process_video(file_path, video_dest_path)
                     
                     def update_ui():
+                        # Lấy biển số đầu tiên nếu có
                         plate = next(iter(plates)) if plates else "Không tìm thấy biển số"
                         current_time = datetime.datetime.now().strftime("%H:%M:%S %d/%m/%Y")
+                        # Cập nhật thông tin lên giao diện
                         self.view.update_plate_info(
                             plate=plate,
                             time_str=current_time,
                             confidence=0
                         )
                         self.view.update_status("⬤ Hoàn tất xử lý", "#4caf50")
+                        # Phát video đã xử lý
                         self.play_video(video_dest_path)
                         self.update_file_lists()
                     
@@ -382,7 +391,7 @@ class LicensePlateController:
             threading.Thread(target=process_video_thread).start()
 
     def export_report(self):
-        """Export detection results to a report file"""
+        """Xuất báo cáo nhận diện biển số ra file."""
         today = datetime.datetime.now().strftime("%Y%m%d")
         filename = f"bao_cao_bien_so_{today}.txt"
         
@@ -405,7 +414,7 @@ class LicensePlateController:
             messagebox.showerror("Lỗi", f"Không thể xuất báo cáo: {str(e)}")
 
     def on_closing(self):
-        """Clean up resources before closing"""
+        """Dọn dẹp tài nguyên trước khi đóng ứng dụng."""
         self.stop_video()
         self.stop_realtime()
         self.view.root.destroy()

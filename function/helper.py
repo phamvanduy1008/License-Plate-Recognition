@@ -1,6 +1,6 @@
 import math
 
-# license plate type classification helper function
+# Tính phương trình đường thẳng y = ax + b
 def linear_equation(x1, y1, x2, y2):
     b = y1 - (y2 - y1) * x1 / (x2 - x1)
     a = (y1 - b) / x1
@@ -27,7 +27,7 @@ def read_plate(yolo_license_plate, im):
         y_sum += y_c
         center_list.append([x_c,y_c,bb[-1]])
 
-    # find 2 point to draw line
+    # Phân loại loại biển số
     l_point = center_list[0]
     r_point = center_list[0]
     for cp in center_list:

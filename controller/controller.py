@@ -82,7 +82,7 @@ class LicensePlateController:
             self.play_video(file_path)
             # Tìm biển số liên quan đến video
             plate = "Không tìm thấy biển số"
-            time_str = "00:00:00 01/01/1970"
+            time_str = "00:00:00 01/01/2025"
             with open("./plate_history.txt", "r", encoding="utf-8") as f:
                 for line in f:
                     if f"(from video {selected_item})" in line:
@@ -322,7 +322,6 @@ class LicensePlateController:
                     
                     def update_ui():
                         if img is not None:
-                            # Hiển thị ảnh đã xử lý lên canvas
                             self.view.update_canvas(img)
                             # Lấy biển số đầu tiên nếu có
                             plate = next(iter(plates)) if plates else "Không tìm thấy biển số"

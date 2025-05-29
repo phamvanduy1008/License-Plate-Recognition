@@ -11,27 +11,24 @@ import stat
 
 class LicensePlateModel:
     def __init__(self):
-        # Đảm bảo thư mục lưu lịch sử ảnh và video tồn tại
         self.HISTORY_DIR = r"D:\hoc_may\License-Plate-Recognition\history_image"
         self.VIDEO_DIR = r"D:\hoc_may\License-Plate-Recognition\history_video"
         for directory in [self.HISTORY_DIR, self.VIDEO_DIR]:
             if not os.path.exists(directory):
                 os.makedirs(directory)
-
-        # Tải hai mô hình YOLOv5: một để phát hiện biển số, một để nhận diện ký tự
         self.yolo_LP_detect = torch.hub.load('yolov5', 'custom', path='./model/LP_detection_nano.pt', force_reload=True, source='local')
         self.yolo_license_plate = torch.hub.load('yolov5', 'custom', path='./model/LP_ocr_nano.pt', force_reload=True, source='local')
         self.yolo_license_plate.conf = 0.60  # Đặt ngưỡng độ tin cậy cho mô hình nhận diện ký tự
 
     def process_frame(self, frame):
         """Xử lý một frame (ảnh hoặc frame video) để phát hiện và đọc biển số."""
-        list_read_plates = set()  # Lưu danh sách biển số đã đọc được
-        plates = self.yolo_LP_detect(frame, size=640)  # Phát hiện vùng biển số với YOLOv5
+        list_read_plates = set()  # Lưu danh sách biển số
+        plates = self.yolo_LP_detect(frame, size=640)  
         list_plates = plates.pandas().xyxy[0].values.tolist()  # Chuyển kết quả thành danh sách
         captured_frame = None  # Lưu frame đã xử lý để hiển thị
         cropped_plate = None  # Lưu ảnh vùng biển số đã cắt
 
-        # Nếu không phát hiện được vùng biển số, thử nhận diện trực tiếp
+        # Nếu yolov5 không phát hiện được vùng biển số, thử nhận diện trực tiếp
         if len(list_plates) == 0:
             lp = read_plate(self.yolo_license_plate, frame)
             if lp != "unknown":
@@ -42,11 +39,12 @@ class LicensePlateModel:
             # Xử lý từng vùng biển số được phát hiện
             for plate in list_plates:
                 flag = 0
-                x = int(plate[0])  # Tọa độ xmin
-                y = int(plate[1])  # Tọa độ ymin
-                w = int(plate[2] - plate[0])  # Chiều rộng vùng
-                h = int(plate[3] - plate[1])  # Chiều cao vùng
-                crop_img = frame[y:y+h, x:x+w]  # Cắt vùng biển số
+                #Khởi tạo tọa độ khung biển sốsố
+                x = int(plate[0])  
+                y = int(plate[1])  
+                w = int(plate[2] - plate[0])  
+                h = int(plate[3] - plate[1])  
+                crop_img = frame[y:y+h, x:x+w]  
                 cv2.rectangle(frame, (int(plate[0]), int(plate[1])), (int(plate[2]), int(plate[3])), color=(0, 0, 225), thickness=2)  # Vẽ khung đỏ quanh vùng biển số
                 cv2.imwrite("crop.jpg", crop_img)  # Lưu tạm vùng cắt để xử lý
                 lp = ""
